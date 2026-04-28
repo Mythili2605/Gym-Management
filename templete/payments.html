@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Payments – FitZone</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><div class="brand-icon">FZ</div><span>FitZone</span></div>
+    <nav class="sidebar-nav">
+      <a href="index.html"      class="nav-link"><span class="nav-icon">⬛</span><span class="nav-label">Dashboard</span></a>
+      <a href="members.html"    class="nav-link"><span class="nav-icon">👤</span><span class="nav-label">Members</span></a>
+      <a href="trainers.html"   class="nav-link"><span class="nav-icon">💪</span><span class="nav-label">Trainers</span></a>
+      <a href="classes.html"    class="nav-link"><span class="nav-icon">🏋</span><span class="nav-label">Classes</span></a>
+      <a href="payments.html"   class="nav-link active"><span class="nav-icon">💳</span><span class="nav-label">Payments</span></a>
+      <a href="attendance.html" class="nav-link"><span class="nav-icon">📋</span><span class="nav-label">Attendance</span></a>
+      <a href="equipment.html"  class="nav-link"><span class="nav-icon">🔧</span><span class="nav-label">Equipment</span></a>
+      <a href="reports.html"    class="nav-link"><span class="nav-icon">📊</span><span class="nav-label">Reports</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-profile"><div class="user-avatar">AD</div><div class="user-info"><span class="user-name">Admin</span><span class="user-role">Super Admin</span></div></div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <div class="page-title"><h1>Payments</h1><span class="breadcrumb">Home / Payments</span></div>
+      </div>
+    </header>
+
+    <div class="page-body">
+      <!-- Summary Cards -->
+      <div class="stat-grid" style="grid-template-columns:repeat(4,1fr)">
+        <div class="stat-card card-green">
+          <div class="stat-icon">💰</div>
+          <div class="stat-info">
+            <span class="stat-value" id="totalPaid">–</span>
+            <span class="stat-label">Total Collected</span>
+          </div>
+        </div>
+        <div class="stat-card card-amber">
+          <div class="stat-icon">⏳</div>
+          <div class="stat-info">
+            <span class="stat-value" id="totalPending">–</span>
+            <span class="stat-label">Pending</span>
+          </div>
+        </div>
+        <div class="stat-card card-blue">
+          <div class="stat-icon">📑</div>
+          <div class="stat-info">
+            <span class="stat-value" id="totalTxn">–</span>
+            <span class="stat-label">Transactions</span>
+          </div>
+        </div>
+        <div class="stat-card card-teal">
+          <div class="stat-icon">📈</div>
+          <div class="stat-info">
+            <span class="stat-value" id="avgPayment">–</span>
+            <span class="stat-label">Avg. Payment</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-header">
+        <h2>Payment Records</h2>
+        <button class="btn btn-primary" onclick="openPayModal()">+ Record Payment</button>
+      </div>
+
+      <div class="filter-bar">
+        <input type="text" id="searchInput" placeholder="🔍 Search member..." style="flex:1" oninput="renderPayments()"/>
+        <select id="statusFilter" onchange="renderPayments()">
+          <option value="">All Status</option>
+          <option>Paid</option><option>Pending</option>
+        </select>
+        <select id="methodFilter" onchange="renderPayments()">
+          <option value="">All Methods</option>
+          <option>UPI</option><option>Cash</option><option>Card</option><option>Net Banking</option>
+        </select>
+      </div>
+
+      <div class="card" style="padding:0;overflow:hidden">
+        <table class="data-table">
+          <thead>
+            <tr><th>#</th><th>Member</th><th>Plan</th><th>Amount</th><th>Date</th><th>Method</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="paymentsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- PAYMENT MODAL -->
+  <div class="modal-overlay" id="payModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Record Payment</h3>
+        <button class="modal-close" onclick="closePayModal()">✕</button>
+      </div>
+      <div class="form-group">
+        <label>Member *</label>
+        <select id="pMember"><option value="">-- Select Member --</option></select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Plan</label>
+          <select id="pPlan"><option>Basic</option><option>Premium</option><option>Elite</option></select>
+        </div>
+        <div class="form-group">
+          <label>Amount (₹) *</label>
+          <input id="pAmount" type="number" placeholder="e.g. 2500"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Payment Date</label>
+          <input id="pDate" type="date"/>
+        </div>
+        <div class="form-group">
+          <label>Method</label>
+          <select id="pMethod"><option>UPI</option><option>Cash</option><option>Card</option><option>Net Banking</option></select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="pStatus"><option>Paid</option><option>Pending</option></select>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:10px">
+        <button class="btn btn-outline" onclick="closePayModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="savePayment()">Save Payment</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      loadSummary();
+      renderPayments();
+      populateMemberList();
+      document.getElementById('pDate').value = new Date().toISOString().split('T')[0];
+    });
+
+    function loadSummary() {
+      const pays = getPayments();
+      const paid = pays.filter(p => p.status === 'Paid');
+      const pend = pays.filter(p => p.status === 'Pending');
+      const totalPaidAmt = paid.reduce((s, p) => s + p.amount, 0);
+      const totalPendAmt = pend.reduce((s, p) => s + p.amount, 0);
+      document.getElementById('totalPaid').textContent    = '₹' + totalPaidAmt.toLocaleString('en-IN');
+      document.getElementById('totalPending').textContent = '₹' + totalPendAmt.toLocaleString('en-IN');
+      document.getElementById('totalTxn').textContent     = pays.length;
+      document.getElementById('avgPayment').textContent   = '₹' + (paid.length ? Math.round(totalPaidAmt / paid.length).toLocaleString('en-IN') : 0);
+    }
+
+    function renderPayments() {
+      const search  = (document.getElementById('searchInput')?.value || '').toLowerCase();
+      const status  = document.getElementById('statusFilter')?.value || '';
+      const method  = document.getElementById('methodFilter')?.value || '';
+      const tbody   = document.getElementById('paymentsBody');
+      let pays = getPayments();
+      if (search) pays = pays.filter(p => p.member.toLowerCase().includes(search));
+      if (status) pays = pays.filter(p => p.status === status);
+      if (method) pays = pays.filter(p => p.method === method);
+
+      tbody.innerHTML = pays.map((p, i) => `
+        <tr>
+          <td style="color:var(--text3)">${i+1}</td>
+          <td style="color:var(--text);font-weight:500">${p.member}</td>
+          <td>${planBadge(p.plan)}</td>
+          <td style="color:var(--green);font-weight:600">₹${p.amount.toLocaleString('en-IN')}</td>
+          <td>${p.date}</td>
+          <td><span style="font-size:12px;color:var(--text2)">${p.method}</span></td>
+          <td>${p.status === 'Paid'
+            ? '<span class="badge badge-active">Paid</span>'
+            : '<span class="badge badge-pending">Pending</span>'}</td>
+          <td>
+            <button class="btn btn-sm btn-outline" onclick="markPaid(${p.id})">✓ Mark Paid</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function markPaid(id) {
+      const pays = getPayments();
+      const p = pays.find(x => x.id === id);
+      if (p) { p.status = 'Paid'; savePayments(pays); renderPayments(); loadSummary(); }
+    }
+
+    function populateMemberList() {
+      const sel = document.getElementById('pMember');
+      getMembers().forEach(m => {
+        const o = document.createElement('option');
+        o.value = m.name; o.textContent = m.name;
+        sel.appendChild(o);
+      });
+    }
+
+    function openPayModal()  { document.getElementById('payModal').classList.add('active'); }
+    function closePayModal() { document.getElementById('payModal').classList.remove('active'); }
+
+    function savePayment() {
+      const member = document.getElementById('pMember').value;
+      const amount = +document.getElementById('pAmount').value;
+      const plan   = document.getElementById('pPlan').value;
+      const date   = document.getElementById('pDate').value;
+      const method = document.getElementById('pMethod').value;
+      const status = document.getElementById('pStatus').value;
+      if (!member || !amount) { alert('Member and Amount required!'); return; }
+      const pays = getPayments();
+      pays.push({ id: nextId(pays), member, amount, plan, date, method, status });
+      savePayments(pays);
+      closePayModal();
+      renderPayments();
+      loadSummary();
+    }
+  </script>
+</body>
+</html>

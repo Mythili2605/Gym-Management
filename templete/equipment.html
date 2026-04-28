@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Equipment – FitZone</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><div class="brand-icon">FZ</div><span>FitZone</span></div>
+    <nav class="sidebar-nav">
+      <a href="index.html"      class="nav-link"><span class="nav-icon">⬛</span><span class="nav-label">Dashboard</span></a>
+      <a href="members.html"    class="nav-link"><span class="nav-icon">👤</span><span class="nav-label">Members</span></a>
+      <a href="trainers.html"   class="nav-link"><span class="nav-icon">💪</span><span class="nav-label">Trainers</span></a>
+      <a href="classes.html"    class="nav-link"><span class="nav-icon">🏋</span><span class="nav-label">Classes</span></a>
+      <a href="payments.html"   class="nav-link"><span class="nav-icon">💳</span><span class="nav-label">Payments</span></a>
+      <a href="attendance.html" class="nav-link"><span class="nav-icon">📋</span><span class="nav-label">Attendance</span></a>
+      <a href="equipment.html"  class="nav-link active"><span class="nav-icon">🔧</span><span class="nav-label">Equipment</span></a>
+      <a href="reports.html"    class="nav-link"><span class="nav-icon">📊</span><span class="nav-label">Reports</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-profile"><div class="user-avatar">AD</div><div class="user-info"><span class="user-name">Admin</span><span class="user-role">Super Admin</span></div></div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <div class="page-title"><h1>Equipment</h1><span class="breadcrumb">Home / Equipment</span></div>
+      </div>
+    </header>
+
+    <div class="page-body">
+      <div class="page-header">
+        <h2>Equipment Inventory</h2>
+        <button class="btn btn-primary" onclick="openModal()">+ Add Equipment</button>
+      </div>
+
+      <div class="card" style="padding:0;overflow:hidden">
+        <table class="data-table">
+          <thead><tr><th>#</th><th>Equipment</th><th>Brand</th><th>Quantity</th><th>Status</th><th>Last Serviced</th><th>Actions</th></tr></thead>
+          <tbody id="equipBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <div class="modal-overlay" id="equipModal">
+    <div class="modal">
+      <div class="modal-header"><h3 id="eModalTitle">Add Equipment</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+      <input type="hidden" id="eId"/>
+      <div class="form-row">
+        <div class="form-group"><label>Name *</label><input id="eName" type="text" placeholder="e.g. Treadmill"/></div>
+        <div class="form-group"><label>Brand</label><input id="eBrand" type="text" placeholder="e.g. LifeFitness"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Quantity</label><input id="eQty" type="number" value="1"/></div>
+        <div class="form-group"><label>Status</label>
+          <select id="eStatus"><option>Good</option><option>Needs Repair</option><option>Out of Service</option></select>
+        </div>
+      </div>
+      <div class="form-group"><label>Last Serviced</label><input id="eService" type="date"/></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:10px">
+        <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveEquip()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', renderEquip);
+
+    function renderEquip() {
+      const tbody = document.getElementById('equipBody');
+      tbody.innerHTML = getEquipment().map((e, i) => `
+        <tr>
+          <td style="color:var(--text3)">${i+1}</td>
+          <td style="color:var(--text);font-weight:500">${e.name}</td>
+          <td>${e.brand}</td>
+          <td>${e.qty}</td>
+          <td><span class="badge ${e.status === 'Good' ? 'badge-active' : e.status === 'Needs Repair' ? 'badge-pending' : 'badge-expired'}">${e.status}</span></td>
+          <td>${e.lastService}</td>
+          <td>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-sm btn-outline" onclick="editEquip(${e.id})">✏ Edit</button>
+              <button class="btn btn-sm" style="background:var(--coral)20;color:var(--coral);border:none;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px" onclick="deleteEquip(${e.id})">🗑</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function openModal() {
+      document.getElementById('eModalTitle').textContent = 'Add Equipment';
+      ['eId','eName','eBrand'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('eQty').value    = 1;
+      document.getElementById('eStatus').value = 'Good';
+      document.getElementById('eService').value = new Date().toISOString().split('T')[0];
+      document.getElementById('equipModal').classList.add('active');
+    }
+
+    function editEquip(id) {
+      const e = getEquipment().find(x => x.id === id);
+      if (!e) return;
+      document.getElementById('eModalTitle').textContent = 'Edit Equipment';
+      document.getElementById('eId').value      = e.id;
+      document.getElementById('eName').value    = e.name;
+      document.getElementById('eBrand').value   = e.brand;
+      document.getElementById('eQty').value     = e.qty;
+      document.getElementById('eStatus').value  = e.status;
+      document.getElementById('eService').value = e.lastService;
+      document.getElementById('equipModal').classList.add('active');
+    }
+
+    function saveEquip() {
+      const name = document.getElementById('eName').value.trim();
+      if (!name) { alert('Equipment name required!'); return; }
+      const equip = getEquipment();
+      const id = document.getElementById('eId').value;
+      const obj = {
+        name,
+        brand:       document.getElementById('eBrand').value,
+        qty:        +document.getElementById('eQty').value,
+        status:      document.getElementById('eStatus').value,
+        lastService: document.getElementById('eService').value,
+      };
+      if (id) {
+        const idx = equip.findIndex(e => e.id == id);
+        if (idx > -1) equip[idx] = { ...equip[idx], ...obj };
+      } else {
+        equip.push({ id: nextId(equip), ...obj });
+      }
+      saveEquipment(equip);
+      closeModal();
+      renderEquip();
+    }
+
+    function deleteEquip(id) {
+      if (!confirm('Delete this equipment?')) return;
+      saveEquipment(getEquipment().filter(e => e.id !== id));
+      renderEquip();
+    }
+
+    function closeModal() { document.getElementById('equipModal').classList.remove('active'); }
+  </script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reports – FitZone</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><div class="brand-icon">FZ</div><span>FitZone</span></div>
+    <nav class="sidebar-nav">
+      <a href="index.html"      class="nav-link"><span class="nav-icon">⬛</span><span class="nav-label">Dashboard</span></a>
+      <a href="members.html"    class="nav-link"><span class="nav-icon">👤</span><span class="nav-label">Members</span></a>
+      <a href="trainers.html"   class="nav-link"><span class="nav-icon">💪</span><span class="nav-label">Trainers</span></a>
+      <a href="classes.html"    class="nav-link"><span class="nav-icon">🏋</span><span class="nav-label">Classes</span></a>
+      <a href="payments.html"   class="nav-link"><span class="nav-icon">💳</span><span class="nav-label">Payments</span></a>
+      <a href="attendance.html" class="nav-link"><span class="nav-icon">📋</span><span class="nav-label">Attendance</span></a>
+      <a href="equipment.html"  class="nav-link"><span class="nav-icon">🔧</span><span class="nav-label">Equipment</span></a>
+      <a href="reports.html"    class="nav-link active"><span class="nav-icon">📊</span><span class="nav-label">Reports</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-profile"><div class="user-avatar">AD</div><div class="user-info"><span class="user-name">Admin</span><span class="user-role">Super Admin</span></div></div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <div class="page-title"><h1>Reports & Analytics</h1><span class="breadcrumb">Home / Reports</span></div>
+      </div>
+    </header>
+
+    <div class="page-body">
+
+      <!-- KPI Summary -->
+      <div class="stat-grid">
+        <div class="stat-card card-blue"><div class="stat-icon">👥</div><div class="stat-info"><span class="stat-value" id="rMembers">–</span><span class="stat-label">Total Members</span></div></div>
+        <div class="stat-card card-green"><div class="stat-icon">💰</div><div class="stat-info"><span class="stat-value" id="rRevenue">–</span><span class="stat-label">Total Revenue</span></div></div>
+        <div class="stat-card card-amber"><div class="stat-icon">🏋</div><div class="stat-info"><span class="stat-value" id="rClasses">–</span><span class="stat-label">Active Classes</span></div></div>
+        <div class="stat-card card-coral"><div class="stat-icon">💪</div><div class="stat-info"><span class="stat-value" id="rTrainers">–</span><span class="stat-label">Trainers</span></div></div>
+      </div>
+
+      <div class="dashboard-grid">
+
+        <!-- Plan Distribution -->
+        <div class="card">
+          <div class="card-header"><h3>Membership Plan Distribution</h3></div>
+          <div id="planChart" style="display:flex;flex-direction:column;gap:12px;margin-top:10px"></div>
+        </div>
+
+        <!-- Status Distribution -->
+        <div class="card">
+          <div class="card-header"><h3>Member Status Breakdown</h3></div>
+          <div id="statusChart" style="display:flex;flex-direction:column;gap:12px;margin-top:10px"></div>
+        </div>
+
+        <!-- Payment Methods -->
+        <div class="card">
+          <div class="card-header"><h3>Payment Methods</h3></div>
+          <div id="methodChart" style="display:flex;flex-direction:column;gap:12px;margin-top:10px"></div>
+        </div>
+
+        <!-- Top Trainers -->
+        <div class="card">
+          <div class="card-header"><h3>Trainers by Members</h3></div>
+          <div id="trainerChart" style="display:flex;flex-direction:column;gap:12px;margin-top:10px"></div>
+        </div>
+
+      </div>
+
+      <!-- Equipment status -->
+      <div class="card">
+        <div class="card-header"><h3>Equipment Health Overview</h3></div>
+        <table class="data-table">
+          <thead><tr><th>Equipment</th><th>Brand</th><th>Qty</th><th>Status</th><th>Last Serviced</th></tr></thead>
+          <tbody id="equipTable"></tbody>
+        </table>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="js/data.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', loadReports);
+
+    function loadReports() {
+      const members  = getMembers();
+      const payments = getPayments();
+      const classes  = getClasses();
+      const trainers = getTrainers();
+      const equip    = getEquipment();
+
+      // KPIs
+      const totalRev = payments.filter(p => p.status === 'Paid').reduce((s,p) => s+p.amount, 0);
+      document.getElementById('rMembers').textContent  = members.length;
+      document.getElementById('rRevenue').textContent  = '₹' + totalRev.toLocaleString('en-IN');
+      document.getElementById('rClasses').textContent  = classes.length;
+      document.getElementById('rTrainers').textContent = trainers.length;
+
+      // Plan Distribution
+      buildBarChart('planChart', countBy(members, 'plan'), ['var(--blue)','var(--purple)','var(--amber)'], members.length);
+
+      // Status Distribution
+      buildBarChart('statusChart', countBy(members, 'status'), ['var(--green)','var(--coral)','var(--amber)'], members.length);
+
+      // Payment Methods
+      const pm = countBy(payments, 'method');
+      buildBarChart('methodChart', pm, ['var(--teal)','var(--amber)','var(--blue)','var(--purple)'], payments.length);
+
+      // Trainer chart
+      const tc = {};
+      trainers.forEach(t => tc[t.name.split(' ')[0]] = t.members);
+      buildBarChart('trainerChart', tc, ['var(--accent)'], Math.max(...Object.values(tc)));
+
+      // Equipment table
+      document.getElementById('equipTable').innerHTML = equip.map(e => `
+        <tr>
+          <td style="color:var(--text);font-weight:500">${e.name}</td>
+          <td>${e.brand}</td>
+          <td>${e.qty}</td>
+          <td><span class="badge ${e.status === 'Good' ? 'badge-active' : 'badge-pending'}">${e.status}</span></td>
+          <td>${e.lastService}</td>
+        </tr>
+      `).join('');
+    }
+
+    function countBy(arr, key) {
+      return arr.reduce((acc, item) => {
+        acc[item[key]] = (acc[item[key]] || 0) + 1;
+        return acc;
+      }, {});
+    }
+
+    function buildBarChart(containerId, data, colors, total) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      const entries = Object.entries(data).sort((a,b) => b[1]-a[1]);
+      const max = Math.max(...entries.map(e => e[1]));
+
+      el.innerHTML = entries.map(([label, count], i) => {
+        const pct = Math.round((count / (total || max)) * 100);
+        const color = colors[i % colors.length];
+        return `
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
+              <span style="color:var(--text)">${label}</span>
+              <span style="color:var(--text2)">${count} (${pct}%)</span>
+            </div>
+            <div style="height:8px;background:var(--surface2);border-radius:4px;overflow:hidden">
+              <div style="height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width 0.6s ease"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  </script>
+</body>
+</html>

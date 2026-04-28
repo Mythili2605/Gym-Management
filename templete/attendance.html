@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Attendance – FitZone</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><div class="brand-icon">FZ</div><span>FitZone</span></div>
+    <nav class="sidebar-nav">
+      <a href="index.html"      class="nav-link"><span class="nav-icon">⬛</span><span class="nav-label">Dashboard</span></a>
+      <a href="members.html"    class="nav-link"><span class="nav-icon">👤</span><span class="nav-label">Members</span></a>
+      <a href="trainers.html"   class="nav-link"><span class="nav-icon">💪</span><span class="nav-label">Trainers</span></a>
+      <a href="classes.html"    class="nav-link"><span class="nav-icon">🏋</span><span class="nav-label">Classes</span></a>
+      <a href="payments.html"   class="nav-link"><span class="nav-icon">💳</span><span class="nav-label">Payments</span></a>
+      <a href="attendance.html" class="nav-link active"><span class="nav-icon">📋</span><span class="nav-label">Attendance</span></a>
+      <a href="equipment.html"  class="nav-link"><span class="nav-icon">🔧</span><span class="nav-label">Equipment</span></a>
+      <a href="reports.html"    class="nav-link"><span class="nav-icon">📊</span><span class="nav-label">Reports</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-profile"><div class="user-avatar">AD</div><div class="user-info"><span class="user-name">Admin</span><span class="user-role">Super Admin</span></div></div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <div class="page-title"><h1>Attendance</h1><span class="breadcrumb">Home / Attendance</span></div>
+      </div>
+    </header>
+
+    <div class="page-body">
+      <div class="page-header">
+        <h2>Attendance Log</h2>
+        <button class="btn btn-primary" onclick="markAttendance()">+ Mark Check-in</button>
+      </div>
+
+      <div class="filter-bar">
+        <input type="date" id="dateFilter" onchange="renderAttendance()"/>
+        <input type="text" id="searchInput" placeholder="🔍 Search member..." style="flex:1" oninput="renderAttendance()"/>
+      </div>
+
+      <div class="card" style="padding:0;overflow:hidden">
+        <table class="data-table">
+          <thead>
+            <tr><th>#</th><th>Member</th><th>Date</th><th>Check In</th><th>Check Out</th><th>Class</th><th>Duration</th></tr>
+          </thead>
+          <tbody id="attendBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/data.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('dateFilter').value = new Date().toISOString().split('T')[0];
+      renderAttendance();
+    });
+
+    function renderAttendance() {
+      const dateF  = document.getElementById('dateFilter').value;
+      const search = (document.getElementById('searchInput').value || '').toLowerCase();
+      const tbody  = document.getElementById('attendBody');
+      let records  = getAttendance();
+      if (dateF)  records = records.filter(r => r.date === dateF);
+      if (search) records = records.filter(r => r.member.toLowerCase().includes(search));
+
+      if (!records.length) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:30px">No records found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = records.map((r, i) => {
+        const inT  = r.checkIn  ? new Date(`2025-01-01 ${r.checkIn}`)  : null;
+        const outT = r.checkOut ? new Date(`2025-01-01 ${r.checkOut}`) : null;
+        const dur  = (inT && outT) ? Math.round((outT - inT) / 60000) + ' min' : '–';
+        return `
+          <tr>
+            <td style="color:var(--text3)">${i+1}</td>
+            <td style="color:var(--text);font-weight:500">${r.member}</td>
+            <td>${r.date}</td>
+            <td style="color:var(--green)">${r.checkIn}</td>
+            <td style="color:var(--text2)">${r.checkOut || '–'}</td>
+            <td><span class="badge badge-basic">${r.class}</span></td>
+            <td style="color:var(--amber)">${dur}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function markAttendance() {
+      const members = getMembers();
+      const name = prompt('Enter member name to check-in:\n' + members.map(m=>m.name).join(', '));
+      if (!name) return;
+      const member = members.find(m => m.name.toLowerCase() === name.toLowerCase());
+      if (!member) { alert('Member not found!'); return; }
+      const records = getAttendance();
+      const now = new Date();
+      records.push({
+        id: nextId(records),
+        member: member.name,
+        date: now.toISOString().split('T')[0],
+        checkIn: now.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'}),
+        checkOut: '',
+        class: 'General'
+      });
+      saveAttendance(records);
+      renderAttendance();
+    }
+  </script>
+</body>
+</html>
